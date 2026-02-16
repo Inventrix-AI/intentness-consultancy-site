@@ -1,4 +1,5 @@
 import type { ComplianceDocStatus, ServicePackage } from "@/lib/types";
+import type { Route } from "next";
 
 export const companyProfile = {
   legalName: "INTENTNESS CONSULTANCY PRIVATE LIMITED",
@@ -79,7 +80,7 @@ export const complianceChecklist: ComplianceDocStatus = {
   reconciliationSOPReady: false
 };
 
-export const navItems = [
+export const navItems: Array<{ href: Route; label: string }> = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
