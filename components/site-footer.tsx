@@ -98,7 +98,9 @@ export function SiteFooter() {
           <p className="text-xs text-slate-500">
             &copy; {new Date().getFullYear()} {companyProfile.legalName}. All rights reserved.
           </p>
-          <p className="text-xs text-slate-600">Built in India.</p>
+          <a href="https://cysmiqai.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-600 transition-colors hover:text-sky-400">
+            Built by Cysmiq AI
+          </a>
         </div>
       </div>
     </footer>
