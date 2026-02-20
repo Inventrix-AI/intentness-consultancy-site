@@ -1,4 +1,36 @@
-export type CurrencyCode = "INR" | "USD" | "EUR" | "GBP" | "AED";
+export type CurrencyCode = string;
+
+export type CurrencyConfig = {
+  code: string;
+  symbol: string;
+  decimals: number;
+  enabled: boolean;
+};
+
+export type FxEstimate = {
+  base: string;
+  quote: "INR";
+  amountMajor: number;
+  rate: number;
+  converted: number;
+  timestamp: string;
+  provider: string;
+  fallback: boolean;
+};
+
+export type PaymentLifecycleStatus = "created" | "checkout_initiated" | "verified" | "captured" | "failed";
+
+export type PaymentIntentInput = {
+  amountMajor: number;
+  currency: string;
+  payer: {
+    name: string;
+    email: string;
+    country: string;
+  };
+  purpose?: string;
+  reference?: string;
+};
 
 export type ServicePackage = {
   id: string;
@@ -22,19 +54,34 @@ export type Lead = {
   message: string;
 };
 
+export type InvoiceRequestPayload = {
+  id: string;
+  createdAt: string;
+  name: string;
+  email: string;
+  company: string;
+  preferredCurrency: string;
+  amountTarget: string;
+  projectScope: string;
+  timeline?: string;
+};
+
 export type PaymentOrder = {
   id: string;
   createdAt: string;
-  serviceId: string;
-  amount: number;
+  amountMajor: number;
+  amountMinor: number;
   currency: string;
-  client: {
+  payer: {
     name: string;
     email: string;
     country: string;
   };
+  purpose?: string;
+  reference?: string;
+  fxEstimate?: FxEstimate;
   razorpayOrderId: string;
-  status: "created" | "paid" | "failed";
+  status: PaymentLifecycleStatus;
 };
 
 export type PaymentTransaction = {
@@ -44,7 +91,8 @@ export type PaymentTransaction = {
   razorpayPaymentId: string;
   razorpayOrderId: string;
   currency: string;
-  amount: number;
+  amountMinor: number;
+  amountMajor: number;
   status: "verified" | "failed" | "webhook_paid";
   settlementCurrency: "INR";
   notes?: string;

@@ -1,9 +1,17 @@
+import { getCurrencyDecimals } from "@/lib/currencies";
+
 export function nowIso() {
   return new Date().toISOString();
 }
 
-export function toMinorUnits(amount: number): number {
-  return Math.round(amount * 100);
+export function toMinorUnits(amountMajor: number, currency: string): number {
+  const decimals = getCurrencyDecimals(currency);
+  return Math.round(amountMajor * 10 ** decimals);
+}
+
+export function fromMinorUnits(amountMinor: number, currency: string): number {
+  const decimals = getCurrencyDecimals(currency);
+  return amountMinor / 10 ** decimals;
 }
 
 export function estimateInr(amount: number, currency: string): number {
@@ -14,7 +22,7 @@ export function estimateInr(amount: number, currency: string): number {
     AED: 22.8,
     INR: 1
   };
-  return Math.round(amount * (fx[currency] ?? 1));
+  return Number((amount * (fx[currency] ?? 1)).toFixed(2));
 }
 
 export function formatCurrency(amount: number, currency: string) {

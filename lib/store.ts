@@ -1,13 +1,13 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { AuditEvent, Lead, PaymentOrder, PaymentTransaction } from "@/lib/types";
+import type { AuditEvent, InvoiceRequestPayload, Lead, PaymentOrder, PaymentTransaction } from "@/lib/types";
 
 type DbShape = {
   leads: Lead[];
   orders: PaymentOrder[];
   transactions: PaymentTransaction[];
   webhookEvents: string[];
-  invoiceRequests: Record<string, unknown>[];
+  invoiceRequests: InvoiceRequestPayload[];
   audits: AuditEvent[];
 };
 
@@ -46,15 +46,27 @@ export async function saveLead(lead: Lead) {
   await writeDb(db);
 }
 
+export async function getOrderByRazorpayId(razorpayOrderId: string): Promise<PaymentOrder | null> {
+  const db = await readDb();
+  return db.orders.find((o) => o.razorpayOrderId === razorpayOrderId) ?? null;
+}
+
 export async function saveOrder(order: PaymentOrder) {
   const db = await readDb();
   db.orders.push(order);
   await writeDb(db);
 }
 
-export async function markOrderPaid(razorpayOrderId: string) {
+export async function markOrderStatus(razorpayOrderId: string, status: PaymentOrder["status"]) {
   const db = await readDb();
-  db.orders = db.orders.map((o) => (o.razorpayOrderId === razorpayOrderId ? { ...o, status: "paid" } : o));
+  db.orders = db.orders.map((order) =>
+    order.razorpayOrderId === razorpayOrderId
+      ? {
+          ...order,
+          status
+        }
+      : order
+  );
   await writeDb(db);
 }
 
@@ -77,7 +89,7 @@ export async function saveWebhookEvent(eventId: string) {
   }
 }
 
-export async function saveInvoiceRequest(payload: Record<string, unknown>) {
+export async function saveInvoiceRequest(payload: InvoiceRequestPayload) {
   const db = await readDb();
   db.invoiceRequests.push(payload);
   await writeDb(db);

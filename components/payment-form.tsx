@@ -1,9 +1,8 @@
 "use client";
 
 import Script from "next/script";
-import { useMemo, useState } from "react";
-import { servicePackages } from "@/lib/content";
-import { estimateInr, formatCurrency, toMinorUnits } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
+import type { CurrencyConfig, FxEstimate } from "@/lib/types";
 
 declare global {
   interface Window {
@@ -11,22 +10,60 @@ declare global {
   }
 }
 
-type ClientInfo = {
+type PayerInfo = {
   name: string;
   email: string;
   country: string;
 };
 
 export function PaymentForm() {
-  const [serviceId, setServiceId] = useState(servicePackages[0].id);
-  const [client, setClient] = useState<ClientInfo>({ name: "", email: "", country: "United States" });
+  const [currencies, setCurrencies] = useState<CurrencyConfig[]>([]);
+  const [currency, setCurrency] = useState("USD");
+  const [amountMajor, setAmountMajor] = useState("1000");
+  const [purpose, setPurpose] = useState("Consulting Services");
+  const [reference, setReference] = useState("");
+  const [payer, setPayer] = useState<PayerInfo>({ name: "", email: "", country: "United States" });
+  const [fxEstimate, setFxEstimate] = useState<FxEstimate | null>(null);
   const [status, setStatus] = useState("");
   const [processing, setProcessing] = useState(false);
 
-  const selectedService = useMemo(
-    () => servicePackages.find((item) => item.id === serviceId) ?? servicePackages[0],
-    [serviceId]
-  );
+  const parsedAmount = useMemo(() => Number(amountMajor), [amountMajor]);
+
+  useEffect(() => {
+    const loadCurrencies = async () => {
+      const response = await fetch("/api/payments/currencies");
+      const body = await response.json();
+      setCurrencies(body.currencies ?? []);
+      if ((body.currencies ?? []).length > 0) {
+        setCurrency(body.currencies.find((item: CurrencyConfig) => item.code === "USD")?.code ?? body.currencies[0].code);
+      }
+    };
+
+    loadCurrencies().catch(() => setCurrencies([]));
+  }, []);
+
+  useEffect(() => {
+    if (!parsedAmount || parsedAmount <= 0) {
+      setFxEstimate(null);
+      return;
+    }
+
+    const id = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/payments/fx-estimate?base=${encodeURIComponent(currency)}&amount=${encodeURIComponent(String(parsedAmount))}`
+        );
+        const body = await response.json();
+        if (response.ok) {
+          setFxEstimate(body as FxEstimate);
+        }
+      } catch {
+        setFxEstimate(null);
+      }
+    }, 250);
+
+    return () => clearTimeout(id);
+  }, [currency, parsedAmount]);
 
   const launchCheckout = async () => {
     setProcessing(true);
@@ -37,10 +74,18 @@ export function PaymentForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          serviceId: selectedService.id,
-          amount: toMinorUnits(selectedService.amount),
-          currency: selectedService.currency,
-          client
+          amountMajor: parsedAmount,
+          currency,
+          payer,
+          purpose,
+          reference,
+          fxEstimate: fxEstimate
+            ? {
+                rate: fxEstimate.rate,
+                converted: fxEstimate.converted,
+                timestamp: fxEstimate.timestamp
+              }
+            : undefined
         })
       });
 
@@ -55,14 +100,17 @@ export function PaymentForm() {
         amount: orderBody.amount,
         currency: orderBody.currency,
         name: "Intentness Consultancy",
-        description: selectedService.name,
+        description: purpose || "Consulting Payment",
         order_id: orderBody.orderId,
         prefill: {
-          name: client.name,
-          email: client.email
+          name: payer.name,
+          email: payer.email
+        },
+        notes: {
+          reference: reference || "NA"
         },
         theme: {
-          color: "#c2410c"
+          color: "#0ea5e9"
         },
         handler: async (response: Record<string, string>) => {
           const verifyResponse = await fetch("/api/payments/verify", {
@@ -73,90 +121,140 @@ export function PaymentForm() {
           const verifyBody = await verifyResponse.json();
           setStatus(
             verifyBody.status === "verified"
-              ? `Payment verified. Reference: ${verifyBody.paymentId}`
-              : "Payment failed verification."
+              ? `Payment verified successfully! Reference: ${verifyBody.paymentId}`
+              : "Payment verification failed. Please contact support."
           );
         }
       });
 
       razorpay.open();
     } catch {
-      setStatus("Checkout failed to initialize.");
+      setStatus("Checkout failed to initialize. Please try again.");
     } finally {
       setProcessing(false);
     }
   };
 
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-all hover:border-slate-300 focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20 focus:outline-none";
+
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="card grid gap-4">
-          <p className="text-sm font-medium uppercase tracking-wide text-accent">Direct Checkout</p>
-          <h2 className="font-display text-2xl font-semibold text-base">Pay for services online</h2>
+      <div className="grid gap-6">
+        <div className="card">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">Pay Now</p>
+          <h2 className="mt-2 font-display text-2xl font-semibold text-slate-900">Custom amount checkout</h2>
+          <p className="mt-2 text-sm text-slate-500">Enter amount in your preferred currency and continue securely with Razorpay.</p>
 
-          <label className="text-sm font-medium text-slate-700">Service package</label>
-          <select
-            className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
-            value={serviceId}
-            onChange={(e) => setServiceId(e.target.value)}
-          >
-            {servicePackages.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} ({item.currency} {item.amount})
-              </option>
-            ))}
-          </select>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <input
-              className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
-              placeholder="Client name"
-              value={client.name}
-              onChange={(e) => setClient({ ...client, name: e.target.value })}
-            />
-            <input
-              className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
-              placeholder="Client email"
-              type="email"
-              value={client.email}
-              onChange={(e) => setClient({ ...client, email: e.target.value })}
-            />
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Amount</label>
+              <input
+                className={inputClass}
+                placeholder="1000"
+                value={amountMajor}
+                onChange={(e) => setAmountMajor(e.target.value)}
+                inputMode="decimal"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Currency</label>
+              <select
+                className={inputClass}
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                {currencies.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.code} ({item.symbol})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <input
-            className="rounded-xl border border-slate-300 px-4 py-3 text-sm"
-            placeholder="Client country"
-            value={client.country}
-            onChange={(e) => setClient({ ...client, country: e.target.value })}
-          />
+          {/* FX Estimate */}
+          {fxEstimate && currency !== "INR" && (
+            <div className="mt-4 rounded-xl border border-sky-100 bg-sky-50/50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Estimated INR equivalent</p>
+              <p className="mt-1 font-display text-lg font-bold text-slate-900">
+                INR {fxEstimate.converted.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Rate: 1 {currency} = {fxEstimate.rate.toFixed(4)} INR &bull; Final amount determined by gateway
+              </p>
+            </div>
+          )}
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Payer name</label>
+              <input
+                className={inputClass}
+                placeholder="Full name"
+                value={payer.name}
+                onChange={(e) => setPayer({ ...payer, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Payer email</label>
+              <input
+                className={inputClass}
+                placeholder="email@company.com"
+                type="email"
+                value={payer.email}
+                onChange={(e) => setPayer({ ...payer, email: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Country</label>
+              <input
+                className={inputClass}
+                placeholder="United States"
+                value={payer.country}
+                onChange={(e) => setPayer({ ...payer, country: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Reference (optional)</label>
+              <input
+                className={inputClass}
+                placeholder="INV-123 or PO number"
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Purpose (optional)</label>
+            <input
+              className={inputClass}
+              placeholder="Consulting Services"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+            />
+          </div>
 
           <button
             type="button"
             onClick={launchCheckout}
-            disabled={processing}
-            className="rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:opacity-60"
+            disabled={processing || !parsedAmount || parsedAmount <= 0}
+            className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition-all hover:bg-slate-800 hover:shadow-lg disabled:opacity-50"
           >
-            {processing ? "Preparing checkout..." : "Proceed to Razorpay Checkout"}
+            {processing ? "Preparing checkout..." : "Proceed to Secure Checkout"}
           </button>
 
-          {status ? <p className="text-sm text-slate-700">{status}</p> : null}
+          {status && (
+            <div className={`mt-4 rounded-lg px-4 py-3 text-sm ${status.includes("verified") || status.includes("success") ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+              {status}
+            </div>
+          )}
         </div>
-
-        <aside className="card">
-          <h3 className="font-display text-xl font-semibold text-base">Pricing summary</h3>
-          <p className="mt-3 text-sm text-slate-600">{selectedService.summary}</p>
-
-          <div className="mt-4 space-y-2 text-sm text-slate-700">
-            <p>Original amount: {formatCurrency(selectedService.amount, selectedService.currency)}</p>
-            <p>
-              Estimated INR equivalent: {formatCurrency(estimateInr(selectedService.amount, selectedService.currency), "INR")}
-            </p>
-            <p className="text-xs text-slate-500">
-              INR shown is indicative only. Final settlement to the Indian account is processed by Razorpay and banking partners.
-            </p>
-          </div>
-        </aside>
       </div>
     </>
   );

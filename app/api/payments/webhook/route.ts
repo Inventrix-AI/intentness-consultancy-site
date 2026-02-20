@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { logAudit } from "@/lib/audit";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 import { makeId } from "@/lib/server-utils";
-import { hasWebhookEvent, markOrderPaid, saveTransaction, saveWebhookEvent } from "@/lib/store";
-import { nowIso } from "@/lib/utils";
+import { hasWebhookEvent, markOrderStatus, saveTransaction, saveWebhookEvent } from "@/lib/store";
+import { fromMinorUnits, nowIso } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -43,18 +43,35 @@ export async function POST(request: NextRequest) {
   const payment = payload.payload?.payment?.entity;
 
   if (event === "payment.captured" && payment?.order_id && payment.id) {
-    await markOrderPaid(payment.order_id);
+    await markOrderStatus(payment.order_id, "captured");
     await saveTransaction({
       id: makeId("tx"),
       createdAt: nowIso(),
       orderId: payment.order_id,
       razorpayPaymentId: payment.id,
       razorpayOrderId: payment.order_id,
-      amount: payment.amount ?? 0,
-      currency: payment.currency ?? "UNKNOWN",
+      amountMinor: payment.amount ?? 0,
+      amountMajor: fromMinorUnits(payment.amount ?? 0, payment.currency ?? "INR"),
+      currency: payment.currency ?? "INR",
       settlementCurrency: "INR",
       status: "webhook_paid",
       notes: "Captured via webhook"
+    });
+    await logAudit("webhook_captured", "webhook", {
+      eventId,
+      paymentId: payment.id,
+      orderId: payment.order_id,
+      amount: payment.amount,
+      currency: payment.currency
+    });
+  }
+
+  if (event === "payment.failed" && payment?.order_id) {
+    await markOrderStatus(payment.order_id, "failed");
+    await logAudit("webhook_failed", "webhook", {
+      eventId,
+      orderId: payment.order_id,
+      paymentId: payment.id
     });
   }
 
