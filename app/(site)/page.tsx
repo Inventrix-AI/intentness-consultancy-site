@@ -141,8 +141,8 @@ export default function HomePage() {
             <HomeAnimations section="net-stack">
               <article className="h-full rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-sky-50/50 p-6 shadow-card">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-md">
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25A2.25 2.25 0 015.25 3h13.5A2.25 2.25 0 0121 5.25z" /></svg>
+                  <div className="flex items-center justify-center rounded-xl shadow-md" style={{ width: 40, height: 40, backgroundColor: '#0284c7' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5a17.92 17.92 0 01-8.716-2.247m0 0A8.966 8.966 0 013 12c0-1.264.26-2.467.732-3.559" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-600">Networking Stack</p>
@@ -167,8 +167,8 @@ export default function HomePage() {
               <HomeAnimations section="sw-stack">
                 <article className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-emerald-50/50 p-6 shadow-card">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg>
+                    <div className="flex items-center justify-center rounded-xl shadow-md" style={{ width: 40, height: 40, backgroundColor: '#059669' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">Software Development</p>
@@ -191,8 +191,8 @@ export default function HomePage() {
               <HomeAnimations section="qa-stack">
                 <article className="rounded-2xl border border-slate-200 bg-gradient-to-br from-amber-50/60 to-orange-50/40 p-6 shadow-card">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-600 text-white shadow-md">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21" /></svg>
+                    <div className="flex items-center justify-center rounded-xl shadow-md" style={{ width: 40, height: 40, backgroundColor: '#d97706' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.5 12a7.5 7.5 0 0015 0m-15 0a7.5 7.5 0 1115 0m-15 0H3m16.5 0H21" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-600">QA & Automation</p>
@@ -233,11 +233,18 @@ export default function HomePage() {
 
           <StaggerContainer className="mt-10 grid gap-5 md:grid-cols-3">
             {teamMembers.map((member, i) => {
-              const colors = ["from-sky-500 to-cyan-400", "from-emerald-500 to-teal-400", "from-violet-500 to-purple-400"];
+              const gradients = [
+                "linear-gradient(135deg, #0284c7, #3b82f6)",
+                "linear-gradient(135deg, #059669, #14b8a6)",
+                "linear-gradient(135deg, #7c3aed, #a855f7)"
+              ];
               return (
                 <StaggerItem key={member.name}>
                   <article className="card card-hover text-center">
-                    <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br ${colors[i % colors.length]} text-2xl font-bold text-white shadow-lg`}>
+                    <div
+                      className="mx-auto flex items-center justify-center rounded-full text-2xl font-bold text-white shadow-lg"
+                      style={{ width: 64, height: 64, background: gradients[i % gradients.length] }}
+                    >
                       {member.name.charAt(0)}
                     </div>
                     <h3 className="mt-4 font-display text-xl font-semibold text-slate-900">{member.name}</h3>

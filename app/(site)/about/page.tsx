@@ -209,13 +209,20 @@ export default function AboutPage() {
           </div>
           <div className="mx-auto mt-12 grid max-w-3xl gap-6 md:grid-cols-3">
             {teamMembers.map((member, i) => {
-              const colors = ["from-sky-500 to-cyan-400", "from-emerald-500 to-teal-400", "from-violet-500 to-purple-400"];
+              const gradients = [
+                "linear-gradient(135deg, #0284c7, #3b82f6)",
+                "linear-gradient(135deg, #059669, #14b8a6)",
+                "linear-gradient(135deg, #7c3aed, #a855f7)"
+              ];
               return (
-                <article key={member.name} className="group rounded-2xl border border-slate-100 bg-slate-50/50 p-6 text-center transition-all hover:border-slate-200 hover:bg-white hover:shadow-lg">
-                  <div className={`mx-auto flex h-18 w-18 items-center justify-center rounded-full bg-gradient-to-br ${colors[i % colors.length]} text-2xl font-bold text-white shadow-lg transition-transform group-hover:scale-105`}>
+                <article key={member.name} className="card card-hover text-center">
+                  <div
+                    className="mx-auto flex items-center justify-center rounded-full text-2xl font-bold text-white shadow-lg"
+                    style={{ width: 64, height: 64, background: gradients[i % gradients.length] }}
+                  >
                     {member.name.charAt(0)}
                   </div>
-                  <h3 className="mt-5 font-display text-lg font-semibold text-slate-900">{member.name}</h3>
+                  <h3 className="mt-4 font-display text-xl font-semibold text-slate-900">{member.name}</h3>
                   <p className="mt-1 text-sm text-slate-600">{member.focus}</p>
                 </article>
               );
