@@ -174,18 +174,6 @@ export function PaymentForm() {
             </div>
           </div>
 
-          {/* FX Estimate */}
-          {fxEstimate && currency !== "INR" && (
-            <div className="mt-4 rounded-xl border border-sky-100 bg-sky-50/50 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Estimated INR equivalent</p>
-              <p className="mt-1 font-display text-lg font-bold text-slate-900">
-                INR {fxEstimate.converted.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-              </p>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Rate: 1 {currency} = {fxEstimate.rate.toFixed(4)} INR &bull; Final amount determined by gateway
-              </p>
-            </div>
-          )}
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div>

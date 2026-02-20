@@ -13,9 +13,9 @@ export const companyProfile = {
   companyType: "Private company limited by shares",
   jurisdiction: "India",
   incorporationOffice: "Manesar, India",
-  contactEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "vivek.voip2@gmail.com",
+  contactEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "hello@intentsupportservices.com",
   contactPhone: process.env.NEXT_PUBLIC_CONTACT_PHONE ?? "+91 9739968800",
-  supportEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "vivek.voip2@gmail.com",
+  supportEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "hello@intentsupportservices.com",
   invoiceEmail: "billing@intentsupportservices.com",
   registeredAddress: "To be updated from official records"
 };
@@ -23,8 +23,10 @@ export const companyProfile = {
 export const heroHighlights = [
   "Collaboration and CX Management",
   "Network and Security",
-  "Automation and QA",
-  "Custom Software Applications"
+  "Audio and Video Integrations",
+  "Custom Software Applications",
+  "Automation",
+  "Managed Services"
 ];
 
 export const capabilityPillars = [
@@ -96,45 +98,69 @@ export const projectStatement =
 
 export const servicePackages: ServicePackage[] = [
   {
-    id: "collaboration-cx-modernization",
-    name: "Collaboration & CX Modernization",
-    summary: "Design, migration and optimization of enterprise collaboration and customer experience stacks.",
-    amount: 3200,
-    currency: "USD",
-    billingMode: "project",
-    turnaround: "4-8 week implementation windows",
-    deliverables: [
-      "Current-state assessment",
-      "Migration blueprint and rollout plan",
-      "Operational readiness and handover"
+    id: "collaboration-cx",
+    name: "Collaboration and CX Management",
+    summary: "Design, migration and optimization of enterprise collaboration and customer experience platforms.",
+    highlights: [
+      "Cisco Call Manager, Unity Connections and IM&P",
+      "UCCX, UCCE and Genesys",
+      "Webex Calling and CX",
+      "Cisco Jabber and Expressway"
     ]
   },
   {
-    id: "network-security-managed",
-    name: "Network & Security Managed Program",
-    summary: "Continuous operations support for network reliability, voice infrastructure and security posture.",
-    amount: 2500,
-    currency: "USD",
-    billingMode: "retainer",
-    turnaround: "Start in 10 business days",
-    deliverables: [
+    id: "network-security",
+    name: "Network and Security",
+    summary: "Enterprise network infrastructure, security posture management and routing and switching operations.",
+    highlights: [
+      "Network Security and Routing & Switching",
+      "Voice Gateways: H323, SIP and MGCP",
+      "CER and EGW for 911 services",
+      "SolarWinds and CMDB"
+    ]
+  },
+  {
+    id: "audio-video",
+    name: "Audio and Video Integrations",
+    summary: "End-to-end audio and video solution design, deployment and integration across enterprise platforms.",
+    highlights: [
+      "Expressway Core and Edge",
+      "CUAC, Imagicle and ARC Console",
+      "Unified communications integration",
+      "Multi-vendor AV ecosystem support"
+    ]
+  },
+  {
+    id: "custom-software",
+    name: "Custom Software Applications",
+    summary: "Full-cycle software development from architecture to deployment across cloud and on-premise environments.",
+    highlights: [
+      "Java, Python and modern frameworks",
+      "Cloud integration: AWS, Azure and GCP",
+      "Agile development with iterative delivery",
+      "Scalable system design"
+    ]
+  },
+  {
+    id: "automation",
+    name: "Automation",
+    summary: "Test automation frameworks, CI/CD pipelines and quality assurance engineering for faster releases.",
+    highlights: [
+      "Selenium with Page Object Model",
+      "Cucumber/BDD and TestNG orchestration",
+      "CI/CD automation with Jenkins",
+      "Cross-browser and cross-environment validation"
+    ]
+  },
+  {
+    id: "managed-services",
+    name: "Managed Services",
+    summary: "Ongoing operational support, monitoring and optimization for network and collaboration infrastructure.",
+    highlights: [
       "Incident and uptime monitoring",
       "Change and compliance governance",
-      "Monthly optimization report"
-    ]
-  },
-  {
-    id: "qa-automation-engine",
-    name: "QA & Automation Engineering",
-    summary: "Build and scale test strategy, CI quality gates and automation frameworks for faster releases.",
-    amount: 2800,
-    currency: "USD",
-    billingMode: "retainer",
-    turnaround: "Start in 15 business days",
-    deliverables: [
-      "Automation framework baseline",
-      "Coverage and reporting dashboard",
-      "Release-quality checkpoints"
+      "Optimization and reporting",
+      "End-to-end operational ownership"
     ]
   }
 ];

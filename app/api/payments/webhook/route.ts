@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { logAudit } from "@/lib/audit";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 import { makeId } from "@/lib/server-utils";
-import { hasWebhookEvent, markOrderStatus, saveTransaction, saveWebhookEvent } from "@/lib/store";
+import { hasWebhookEvent, markOrderStatus, markPaymentLinkPaid, saveTransaction, saveWebhookEvent } from "@/lib/store";
 import { fromMinorUnits, nowIso } from "@/lib/utils";
 
 export const runtime = "nodejs";
@@ -34,6 +34,16 @@ export async function POST(request: NextRequest) {
           amount?: number;
           currency?: string;
           status?: string;
+        };
+      };
+      payment_link?: {
+        entity?: {
+          id?: string;
+          amount?: number;
+          currency?: string;
+          status?: string;
+          reference_id?: string;
+          short_url?: string;
         };
       };
     };
@@ -73,6 +83,37 @@ export async function POST(request: NextRequest) {
       orderId: payment.order_id,
       paymentId: payment.id
     });
+  }
+
+  if (event === "payment_link.paid") {
+    const linkEntity = payload.payload?.payment_link?.entity;
+    const paymentEntity = payload.payload?.payment?.entity;
+
+    if (linkEntity?.id && paymentEntity?.id) {
+      await markPaymentLinkPaid(linkEntity.id, paymentEntity.id);
+
+      await saveTransaction({
+        id: makeId("tx"),
+        createdAt: nowIso(),
+        orderId: linkEntity.id,
+        razorpayPaymentId: paymentEntity.id,
+        razorpayOrderId: linkEntity.id,
+        amountMinor: paymentEntity.amount ?? 0,
+        amountMajor: fromMinorUnits(paymentEntity.amount ?? 0, paymentEntity.currency ?? "INR"),
+        currency: paymentEntity.currency ?? "INR",
+        settlementCurrency: "INR",
+        status: "webhook_paid",
+        notes: `Payment link paid: ${linkEntity.id}`
+      });
+
+      await logAudit("payment_link_paid", "webhook", {
+        eventId,
+        paymentLinkId: linkEntity.id,
+        paymentId: paymentEntity.id,
+        amount: paymentEntity.amount,
+        currency: paymentEntity.currency
+      });
+    }
   }
 
   await logAudit("webhook_processed", "webhook", {

@@ -116,8 +116,10 @@ export function ContactForm() {
         >
           <option>Collaboration and CX Management</option>
           <option>Network and Security</option>
-          <option>Automation and QA</option>
+          <option>Audio and Video Integrations</option>
           <option>Custom Software Applications</option>
+          <option>Automation</option>
+          <option>Managed Services</option>
         </select>
       </div>
 

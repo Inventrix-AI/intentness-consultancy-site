@@ -36,11 +36,7 @@ export type ServicePackage = {
   id: string;
   name: string;
   summary: string;
-  amount: number;
-  currency: CurrencyCode;
-  billingMode: "retainer" | "project";
-  turnaround: string;
-  deliverables: string[];
+  highlights: string[];
 };
 
 export type Lead = {
@@ -98,6 +94,31 @@ export type PaymentTransaction = {
   notes?: string;
 };
 
+export type PaymentLinkStatus = "created" | "paid" | "expired" | "cancelled";
+
+export type PaymentLink = {
+  id: string;
+  createdAt: string;
+  razorpayLinkId: string;
+  shortUrl: string;
+  amountMajor: number;
+  amountMinor: number;
+  currency: string;
+  description: string;
+  reference?: string;
+  client: {
+    name: string;
+    email: string;
+    phone?: string;
+  };
+  notifyEmail: boolean;
+  notifySms: boolean;
+  expiresAt?: string;
+  status: PaymentLinkStatus;
+  paidAt?: string;
+  razorpayPaymentId?: string;
+};
+
 export type ComplianceDocStatus = {
   websitePoliciesLive: boolean;
   kycSubmitted: boolean;
@@ -112,6 +133,6 @@ export type AuditEvent = {
   id: string;
   at: string;
   action: string;
-  entity: "lead" | "payment" | "webhook" | "security";
+  entity: "lead" | "payment" | "webhook" | "security" | "payment_link";
   payload: Record<string, unknown>;
 };

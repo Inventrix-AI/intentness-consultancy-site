@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { AuditEvent, InvoiceRequestPayload, Lead, PaymentOrder, PaymentTransaction } from "@/lib/types";
+import type { AuditEvent, InvoiceRequestPayload, Lead, PaymentLink, PaymentOrder, PaymentTransaction } from "@/lib/types";
 
 type DbShape = {
   leads: Lead[];
@@ -8,6 +8,7 @@ type DbShape = {
   transactions: PaymentTransaction[];
   webhookEvents: string[];
   invoiceRequests: InvoiceRequestPayload[];
+  paymentLinks: PaymentLink[];
   audits: AuditEvent[];
 };
 
@@ -23,6 +24,7 @@ async function ensureDb() {
       transactions: [],
       webhookEvents: [],
       invoiceRequests: [],
+      paymentLinks: [],
       audits: []
     };
     await fs.mkdir(path.dirname(dbPath), { recursive: true });
@@ -92,6 +94,29 @@ export async function saveWebhookEvent(eventId: string) {
 export async function saveInvoiceRequest(payload: InvoiceRequestPayload) {
   const db = await readDb();
   db.invoiceRequests.push(payload);
+  await writeDb(db);
+}
+
+export async function savePaymentLink(link: PaymentLink) {
+  const db = await readDb();
+  const links = db.paymentLinks ?? [];
+  links.push(link);
+  db.paymentLinks = links;
+  await writeDb(db);
+}
+
+export async function markPaymentLinkPaid(razorpayLinkId: string, razorpayPaymentId: string) {
+  const db = await readDb();
+  db.paymentLinks = (db.paymentLinks ?? []).map((link) =>
+    link.razorpayLinkId === razorpayLinkId
+      ? {
+          ...link,
+          status: "paid" as const,
+          paidAt: new Date().toISOString(),
+          razorpayPaymentId
+        }
+      : link
+  );
   await writeDb(db);
 }
 

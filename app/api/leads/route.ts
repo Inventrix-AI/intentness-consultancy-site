@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logAudit } from "@/lib/audit";
+import {
+  sendInvoiceRequestConfirmation,
+  sendInvoiceRequestNotification,
+  sendLeadConfirmation,
+  sendLeadNotification
+} from "@/lib/email";
 import { assertRateLimit } from "@/lib/rate-limit";
 import { makeId } from "@/lib/server-utils";
 import { verifyTurnstile } from "@/lib/security";
@@ -36,12 +42,18 @@ export async function POST(request: NextRequest) {
     }
 
     const requestId = makeId("invreq");
-    await saveInvoiceRequest({
-      id: requestId,
-      createdAt: nowIso(),
-      ...parsedInvoice.data
-    });
+    const invoiceRecord = { id: requestId, createdAt: nowIso(), ...parsedInvoice.data };
+    await saveInvoiceRequest(invoiceRecord);
     await logAudit("invoice_request_created", "lead", { requestId, email: parsedInvoice.data.email });
+
+    // Fire-and-forget email sends
+    void sendInvoiceRequestNotification(invoiceRecord).catch((err) =>
+      console.error("[email] invoice notification failed:", err)
+    );
+    void sendInvoiceRequestConfirmation(invoiceRecord).catch((err) =>
+      console.error("[email] invoice confirmation failed:", err)
+    );
+
     return NextResponse.json({ leadId: requestId, status: "received" });
   }
 
@@ -51,12 +63,17 @@ export async function POST(request: NextRequest) {
   }
 
   const leadId = makeId("lead");
-  await saveLead({
-    id: leadId,
-    createdAt: nowIso(),
-    ...parsed.data
-  });
-
+  const leadRecord = { id: leadId, createdAt: nowIso(), ...parsed.data };
+  await saveLead(leadRecord);
   await logAudit("lead_created", "lead", { leadId, email: parsed.data.workEmail });
+
+  // Fire-and-forget email sends
+  void sendLeadNotification(leadRecord).catch((err) =>
+    console.error("[email] lead notification failed:", err)
+  );
+  void sendLeadConfirmation(leadRecord).catch((err) =>
+    console.error("[email] lead confirmation failed:", err)
+  );
+
   return NextResponse.json({ leadId, status: "captured" });
 }

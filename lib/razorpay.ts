@@ -48,6 +48,56 @@ export async function createRazorpayOrder(payload: RazorpayOrderRequest) {
   return (await response.json()) as RazorpayOrderResponse;
 }
 
+type RazorpayPaymentLinkRequest = {
+  amount: number;
+  currency: string;
+  description: string;
+  customer: {
+    name: string;
+    email: string;
+    contact?: string;
+  };
+  notify: {
+    email: boolean;
+    sms: boolean;
+  };
+  reminder_enable: boolean;
+  reference_id?: string;
+  expire_by?: number;
+};
+
+type RazorpayPaymentLinkResponse = {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  description: string;
+  short_url: string;
+  expire_by?: number;
+  reference_id?: string;
+};
+
+export async function createRazorpayPaymentLink(payload: RazorpayPaymentLinkRequest) {
+  const { keyId, keySecret } = getCreds();
+  const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+
+  const response = await fetch("https://api.razorpay.com/v1/payment_links", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Razorpay payment link creation failed: ${response.status} ${body}`);
+  }
+
+  return (await response.json()) as RazorpayPaymentLinkResponse;
+}
+
 export function verifyRazorpaySignature(orderId: string, paymentId: string, signature: string) {
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keySecret) {
