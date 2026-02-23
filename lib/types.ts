@@ -133,6 +133,101 @@ export type AuditEvent = {
   id: string;
   at: string;
   action: string;
-  entity: "lead" | "payment" | "webhook" | "security" | "payment_link";
+  entity: "lead" | "payment" | "webhook" | "security" | "payment_link" | "invoice";
   payload: Record<string, unknown>;
+};
+
+/* ── Invoice System Types ── */
+
+export type GstTreatment = "registered" | "unregistered" | "export" | "sez";
+
+export type TaxBreakdown = {
+  taxType: "cgst_sgst" | "igst" | "zero_rated";
+  gstRatePercent: number;
+  cgstPercent?: number;
+  cgstAmount?: number;
+  sgstPercent?: number;
+  sgstAmount?: number;
+  igstPercent?: number;
+  igstAmount?: number;
+  totalTax: number;
+};
+
+export type InvoiceLineItem = {
+  description: string;
+  sacCode: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  taxBreakdown: TaxBreakdown;
+  totalWithTax: number;
+};
+
+export type InvoiceSeller = {
+  legalName: string;
+  brandName: string;
+  gstin: string;
+  pan: string;
+  cin: string;
+  address: string;
+  stateCode: string;
+  stateName: string;
+  email: string;
+  phone: string;
+};
+
+export type InvoiceBuyer = {
+  name: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  address?: string;
+  country: string;
+  gstin?: string;
+  stateCode?: string;
+  stateName?: string;
+  gstTreatment: GstTreatment;
+};
+
+export type InvoiceStatus = "draft" | "sent" | "paid" | "cancelled" | "overdue";
+
+export type Invoice = {
+  id: string;
+  invoiceNumber: string;
+  createdAt: string;
+  updatedAt: string;
+  invoiceDate: string;
+  dueDate: string;
+
+  status: InvoiceStatus;
+
+  seller: InvoiceSeller;
+  buyer: InvoiceBuyer;
+
+  lineItems: InvoiceLineItem[];
+
+  currency: string;
+  subtotal: number;
+  totalCgst: number;
+  totalSgst: number;
+  totalIgst: number;
+  totalTax: number;
+  grandTotal: number;
+
+  gstRatePercent: number;
+
+  notes?: string;
+  termsAndConditions?: string;
+
+  paymentLinkId?: string;
+  razorpayLinkId?: string;
+  paymentLinkUrl?: string;
+
+  pdfGenerated: boolean;
+  pdfFileName?: string;
+
+  emailSentAt?: string;
+  createdBy: string;
+  paidAt?: string;
+  razorpayPaymentId?: string;
 };

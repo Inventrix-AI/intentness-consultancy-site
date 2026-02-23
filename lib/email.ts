@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import type { Lead, InvoiceRequestPayload } from "@/lib/types";
+import type { Invoice, Lead, InvoiceRequestPayload } from "@/lib/types";
 
 /* ── SMTP transporter (Hostinger) ── */
 
@@ -153,5 +153,67 @@ export async function sendInvoiceRequestConfirmation(req: InvoiceRequestPayload)
         <a href="mailto:billing@intentsupportservices.com" style="color:#0284c7;">billing@intentsupportservices.com</a>.
       </p>
     `)
+  });
+}
+
+/* ── 5. Invoice email with PDF attachment ── */
+
+function fmtInvDate(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function fmtInvAmount(amount: number, currency: string): string {
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency, minimumFractionDigits: 2 }).format(amount);
+}
+
+export async function sendInvoiceEmail(invoice: Invoice, pdfBuffer: Buffer) {
+  await transporter.sendMail({
+    from: FROM_BILLING,
+    to: invoice.buyer.email,
+    subject: `Invoice ${invoice.invoiceNumber} from ${COMPANY} — ${fmtInvAmount(invoice.grandTotal, invoice.currency)}`,
+    html: wrapHtml(`
+      <h2 style="margin:0 0 8px;font-size:20px;color:#0f172a;">
+        Invoice ${invoice.invoiceNumber}
+      </h2>
+      <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.6;">
+        Dear ${invoice.buyer.name},<br /><br />
+        Please find attached your invoice from ${COMPANY}.
+      </p>
+
+      <table style="width:100%;border-collapse:collapse;">
+        ${row("Invoice Number", invoice.invoiceNumber)}
+        ${row("Invoice Date", fmtInvDate(invoice.invoiceDate))}
+        ${row("Due Date", fmtInvDate(invoice.dueDate))}
+        ${row("Amount", fmtInvAmount(invoice.grandTotal, invoice.currency))}
+      </table>
+
+      ${invoice.paymentLinkUrl ? `
+      <div style="margin-top:24px;text-align:center;">
+        <a href="${invoice.paymentLinkUrl}"
+           style="display:inline-block;padding:14px 32px;background:#0f172a;color:#ffffff;
+                  text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">
+          Pay Now
+        </a>
+        <p style="margin-top:8px;font-size:12px;color:#94a3b8;">
+          Or copy this link: ${invoice.paymentLinkUrl}
+        </p>
+      </div>
+      ` : ""}
+
+      <hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0;" />
+      <p style="margin:0;font-size:13px;color:#64748b;line-height:1.6;">
+        If you have any questions about this invoice, please contact us at
+        <a href="mailto:billing@intentsupportservices.com" style="color:#0284c7;">billing@intentsupportservices.com</a>
+        or call <a href="tel:+919739968800" style="color:#0284c7;">+91 9739968800</a>.
+      </p>
+    `),
+    attachments: [
+      {
+        filename: `${invoice.invoiceNumber}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf"
+      }
+    ]
   });
 }

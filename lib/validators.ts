@@ -112,6 +112,81 @@ export const createPaymentLinkSchema = z
     }
   });
 
+export const createInvoiceSchema = z
+  .object({
+    buyerName: z.string().min(2).max(120),
+    buyerEmail: z.string().email(),
+    buyerCompany: z.string().max(200).optional(),
+    buyerPhone: z.string().max(20).optional(),
+    buyerAddress: z.string().max(500).optional(),
+    buyerCountry: z.string().min(2).max(60),
+    buyerGstin: z.string().max(15).optional(),
+    buyerStateCode: z.string().length(2).optional(),
+    gstTreatment: z.enum(["registered", "unregistered", "export", "sez"]),
+    lineItems: z
+      .array(
+        z.object({
+          description: z.string().min(2).max(300),
+          sacCode: z.string().min(4).max(8).default("998311"),
+          quantity: z.number().positive().max(99999),
+          unitPrice: z.number().positive().max(10_000_000),
+        })
+      )
+      .min(1)
+      .max(50),
+    currency: z.string(),
+    invoiceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    gstRatePercent: z.number().refine((v) => [0, 5, 12, 18, 28].includes(v), {
+      message: "GST rate must be 0, 5, 12, 18, or 28 percent",
+    }),
+    notes: z.string().max(1000).optional(),
+    termsAndConditions: z.string().max(2000).optional(),
+    paymentLinkExpiryHours: z.number().int().min(1).max(8760).optional(),
+    notifyEmail: z.boolean().default(true),
+    notifySms: z.boolean().default(false),
+  })
+  .superRefine((input, ctx) => {
+    if (input.gstTreatment === "registered" && !input.buyerGstin) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["buyerGstin"],
+        message: "GSTIN is required for registered businesses.",
+      });
+    }
+    if (input.buyerCountry.toLowerCase() === "india" && !input.buyerStateCode) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["buyerStateCode"],
+        message: "State is required for Indian clients.",
+      });
+    }
+    if (input.buyerGstin) {
+      const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      if (!gstinRegex.test(input.buyerGstin)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["buyerGstin"],
+          message: "Invalid GSTIN format.",
+        });
+      }
+    }
+    if (!supportedCurrencyCodes.includes(input.currency)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["currency"],
+        message: "Unsupported currency.",
+      });
+    }
+    if (input.dueDate < input.invoiceDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["dueDate"],
+        message: "Due date must be on or after the invoice date.",
+      });
+    }
+  });
+
 export const invoiceRequestSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),

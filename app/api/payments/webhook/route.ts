@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { logAudit } from "@/lib/audit";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 import { makeId } from "@/lib/server-utils";
-import { hasWebhookEvent, markOrderStatus, markPaymentLinkPaid, saveTransaction, saveWebhookEvent } from "@/lib/store";
+import { getInvoices, hasWebhookEvent, markOrderStatus, markPaymentLinkPaid, saveTransaction, saveWebhookEvent, updateInvoiceStatus } from "@/lib/store";
 import { fromMinorUnits, nowIso } from "@/lib/utils";
 
 export const runtime = "nodejs";
@@ -113,6 +113,21 @@ export async function POST(request: NextRequest) {
         amount: paymentEntity.amount,
         currency: paymentEntity.currency
       });
+
+      // Cross-reference: auto-mark linked invoice as paid
+      const invoices = await getInvoices();
+      const linkedInvoice = invoices.find((inv) => inv.razorpayLinkId === linkEntity.id);
+      if (linkedInvoice) {
+        await updateInvoiceStatus(linkedInvoice.id, "paid", {
+          paidAt: nowIso(),
+          razorpayPaymentId: paymentEntity.id,
+        });
+        await logAudit("invoice_paid_via_webhook", "invoice", {
+          invoiceId: linkedInvoice.id,
+          invoiceNumber: linkedInvoice.invoiceNumber,
+          paymentId: paymentEntity.id,
+        });
+      }
     }
   }
 

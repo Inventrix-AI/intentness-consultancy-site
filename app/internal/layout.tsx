@@ -1,20 +1,10 @@
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { AdminLogoutButton } from "@/components/admin-logout-button";
+import { AdminNav } from "@/components/admin-nav";
 
 export default async function InternalLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const isLoginPage =
-    typeof children === "object" && children !== null && "key" in children
-      ? false
-      : false;
-
-  // The login page handles its own auth check — allow it through.
-  // For all other pages, redirect to login if not authenticated.
-  // We detect the login page by checking the URL in middleware-free fashion:
-  // Since we can't read the URL in a layout, we let the login page be a parallel route
-  // and handle auth in each page individually.
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -33,6 +23,7 @@ export default async function InternalLayout({ children }: { children: React.Rea
           {session && <AdminLogoutButton />}
         </div>
       </header>
+      {session && <AdminNav />}
       <main className="mx-auto max-w-4xl px-5 py-8">{children}</main>
     </div>
   );

@@ -17,7 +17,10 @@ export const companyProfile = {
   contactPhone: process.env.NEXT_PUBLIC_CONTACT_PHONE ?? "+91 9739968800",
   supportEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "hello@intentsupportservices.com",
   invoiceEmail: "billing@intentsupportservices.com",
-  registeredAddress: "To be updated from official records"
+  registeredAddress: process.env.COMPANY_REGISTERED_ADDRESS ?? "1502, Motibigha, Nawada, Bihar 805110",
+  gstin: process.env.COMPANY_GSTIN ?? "10AAHCI0720M1ZY",
+  stateCode: process.env.COMPANY_STATE_CODE ?? "10",
+  stateName: "Bihar",
 };
 
 export const heroHighlights = [

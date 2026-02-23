@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { AuditEvent, InvoiceRequestPayload, Lead, PaymentLink, PaymentOrder, PaymentTransaction } from "@/lib/types";
+import type { AuditEvent, Invoice, InvoiceRequestPayload, Lead, PaymentLink, PaymentOrder, PaymentTransaction } from "@/lib/types";
 
 type DbShape = {
   leads: Lead[];
@@ -9,6 +9,7 @@ type DbShape = {
   webhookEvents: string[];
   invoiceRequests: InvoiceRequestPayload[];
   paymentLinks: PaymentLink[];
+  invoices: Invoice[];
   audits: AuditEvent[];
 };
 
@@ -25,6 +26,7 @@ async function ensureDb() {
       webhookEvents: [],
       invoiceRequests: [],
       paymentLinks: [],
+      invoices: [],
       audits: []
     };
     await fs.mkdir(path.dirname(dbPath), { recursive: true });
@@ -124,4 +126,60 @@ export async function saveAudit(event: AuditEvent) {
   const db = await readDb();
   db.audits.push(event);
   await writeDb(db);
+}
+
+/* ── Invoice CRUD ── */
+
+export async function saveInvoice(invoice: Invoice) {
+  const db = await readDb();
+  const invoices = db.invoices ?? [];
+  invoices.push(invoice);
+  db.invoices = invoices;
+  await writeDb(db);
+}
+
+export async function getInvoices(): Promise<Invoice[]> {
+  const db = await readDb();
+  return (db.invoices ?? []).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
+
+export async function getInvoiceById(id: string): Promise<Invoice | null> {
+  const db = await readDb();
+  return (db.invoices ?? []).find((inv) => inv.id === id) ?? null;
+}
+
+export async function updateInvoiceStatus(
+  id: string,
+  status: Invoice["status"],
+  extra?: Partial<Pick<Invoice, "paidAt" | "razorpayPaymentId" | "emailSentAt" | "updatedAt">>
+) {
+  const db = await readDb();
+  db.invoices = (db.invoices ?? []).map((inv) =>
+    inv.id === id ? { ...inv, status, ...extra, updatedAt: new Date().toISOString() } : inv
+  );
+  await writeDb(db);
+}
+
+export async function updateInvoice(id: string, updates: Partial<Invoice>) {
+  const db = await readDb();
+  db.invoices = (db.invoices ?? []).map((inv) =>
+    inv.id === id ? { ...inv, ...updates, updatedAt: new Date().toISOString() } : inv
+  );
+  await writeDb(db);
+}
+
+export async function getNextInvoiceNumber(): Promise<string> {
+  const db = await readDb();
+  const year = new Date().getFullYear();
+  const prefix = `INV-${year}-`;
+  const existing = (db.invoices ?? [])
+    .filter((inv) => inv.invoiceNumber.startsWith(prefix))
+    .map((inv) => {
+      const seq = parseInt(inv.invoiceNumber.replace(prefix, ""), 10);
+      return isNaN(seq) ? 0 : seq;
+    });
+  const nextSeq = existing.length > 0 ? Math.max(...existing) + 1 : 1;
+  return `${prefix}${String(nextSeq).padStart(3, "0")}`;
 }
