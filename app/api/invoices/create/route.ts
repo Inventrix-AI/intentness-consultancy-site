@@ -4,7 +4,7 @@ import { logAudit } from "@/lib/audit";
 import { companyProfile } from "@/lib/content";
 import { calculateTax, determineTaxType } from "@/lib/gst";
 import { INDIAN_STATES } from "@/lib/indian-states";
-import { generateInvoicePdf, saveInvoicePdf } from "@/lib/invoice-pdf";
+import { generateInvoicePdf } from "@/lib/invoice-pdf";
 import { sendInvoiceEmail } from "@/lib/email";
 import { createRazorpayPaymentLink } from "@/lib/razorpay";
 import { assertRateLimit } from "@/lib/rate-limit";
@@ -170,8 +170,6 @@ export async function POST(request: NextRequest) {
       pdfBuffer = pdfBufferDraft;
     }
 
-    const pdfFileName = await saveInvoicePdf(invoice, pdfBuffer);
-
     // ── Step 6: Update invoice to "sent" with all details ──
 
     await updateInvoice(invoiceId, {
@@ -179,8 +177,6 @@ export async function POST(request: NextRequest) {
       paymentLinkId: invoice.paymentLinkId,
       razorpayLinkId: rpLink.id,
       paymentLinkUrl: rpLink.short_url,
-      pdfGenerated: true,
-      pdfFileName,
     });
 
     // ── Step 7: Send email (fire-and-forget) ──
@@ -211,7 +207,6 @@ export async function POST(request: NextRequest) {
         buyerEmail: d.buyerEmail,
       },
       paymentLinkUrl: rpLink.short_url,
-      pdfFileName,
     });
   } catch (error) {
     console.error("[invoice] create failed:", error);

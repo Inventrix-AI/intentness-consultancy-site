@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { getInvoiceById } from "@/lib/store";
-import { readInvoicePdf, generateInvoicePdf, saveInvoicePdf } from "@/lib/invoice-pdf";
+import { generateInvoicePdf } from "@/lib/invoice-pdf";
 
 export const runtime = "nodejs";
 
@@ -16,14 +16,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
   }
 
-  let pdfBuffer: Buffer;
-  try {
-    pdfBuffer = await readInvoicePdf(invoice.pdfFileName ?? `${invoice.invoiceNumber}.pdf`);
-  } catch {
-    // Regenerate if file is missing
-    pdfBuffer = await generateInvoicePdf(invoice);
-    await saveInvoicePdf(invoice, pdfBuffer);
-  }
+  const pdfBuffer = await generateInvoicePdf(invoice);
 
   return new NextResponse(pdfBuffer, {
     headers: {

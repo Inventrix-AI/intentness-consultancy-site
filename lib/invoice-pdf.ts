@@ -1,9 +1,7 @@
 import PDFDocument from "pdfkit";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { Invoice } from "@/lib/types";
 
-const INVOICES_DIR = path.join(process.cwd(), "data", "invoices");
 const LOGO_PATH = path.join(process.cwd(), "public", "intentness-logo-icon.png");
 
 /* ── Colours ── */
@@ -283,8 +281,6 @@ function drawFooter(doc: PDFKit.PDFDocument, invoice: Invoice, startY: number) {
 /* ── Public API ── */
 
 export async function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
-  await fs.mkdir(INVOICES_DIR, { recursive: true });
-
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: 50, bufferPages: true });
     const chunks: Buffer[] = [];
@@ -305,15 +301,3 @@ export async function generateInvoicePdf(invoice: Invoice): Promise<Buffer> {
   });
 }
 
-export async function saveInvoicePdf(invoice: Invoice, pdfBuffer: Buffer): Promise<string> {
-  await fs.mkdir(INVOICES_DIR, { recursive: true });
-  const fileName = `${invoice.invoiceNumber}.pdf`;
-  const filePath = path.join(INVOICES_DIR, fileName);
-  await fs.writeFile(filePath, pdfBuffer);
-  return fileName;
-}
-
-export async function readInvoicePdf(fileName: string): Promise<Buffer> {
-  const filePath = path.join(INVOICES_DIR, fileName);
-  return fs.readFile(filePath);
-}

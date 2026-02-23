@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { sendInvoiceEmail } from "@/lib/email";
-import { readInvoicePdf, generateInvoicePdf } from "@/lib/invoice-pdf";
+import { generateInvoicePdf } from "@/lib/invoice-pdf";
 import { getInvoiceById, updateInvoiceStatus } from "@/lib/store";
 import { nowIso } from "@/lib/utils";
 
@@ -19,12 +19,7 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
   }
 
-  let pdfBuffer: Buffer;
-  try {
-    pdfBuffer = await readInvoicePdf(invoice.pdfFileName ?? `${invoice.invoiceNumber}.pdf`);
-  } catch {
-    pdfBuffer = await generateInvoicePdf(invoice);
-  }
+  const pdfBuffer = await generateInvoicePdf(invoice);
 
   try {
     await sendInvoiceEmail(invoice, pdfBuffer);
